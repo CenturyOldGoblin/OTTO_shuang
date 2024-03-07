@@ -1,5 +1,5 @@
 {
-  "name": "Shuang",
+  "name": "shuang",
   "version": "5.18.0",
   "description": "帮助你快速上手双拼输入法",
   "scripts": {
@@ -46,5 +46,6 @@
   },
   "dependencies": {
     "pinyin-pro": "^3.19.6"
-  }
+  },
+  "main": "index.js"
 }

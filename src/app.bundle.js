@@ -228,9 +228,12 @@ Shuang.resource.dict = {
   }
 }
 Shuang.resource.otto传世语录 = [
-  "我重拾你的梦",
-  "你老惦记着你那个b三狼干什么玩意儿呢",
-  "来我给你房管你给我说话来这个叫nmb尊尼获加的臭jb杠精你给我说话来"
+  // "我重拾你的梦",
+  // "你老惦记着你那个b三狼干什么玩意儿呢",
+  // "来我给你房管你给我说话来这个叫nmb尊尼获加的臭jb杠精你给我说话来"
+  "aa一",
+  "二bb三",
+  "aa二"
 ]
 Object.entries(Shuang.resource.dict).forEach(([sheng, yunList]) => Shuang.resource.dict[sheng].list = Object.keys(yunList))
 Shuang.resource.dict.list = Object.keys(Shuang.resource.dict)
@@ -287,12 +290,19 @@ Shuang.app.modeList = {
 /************************ core.js ************************/
 /** last changed: 2019.8.23 */
 // const { pinyin } = require('pinyin-pro');
-import { pinyin } from 'pinyin-pro';
+// import {pinyin} from 'pinyin-pro'
 Shuang.core.model = class Model {
-  constructor(sheng = '', yun = '') {
+  constructor(sheng = '', yun = '', word = '') {
     this.sheng = sheng.toLowerCase()
     this.yun = yun.toLowerCase()
-    this.dict = Shuang.resource.dict[this.sheng][this.yun]
+    this.is_char = false
+    if (word !== '') {
+      this.dict = word
+      if (/^[a-zA-Z]*$/.test(word)) {
+        this.is_char=true
+      }
+    }
+    else this.dict = Shuang.resource.dict[this.sheng][this.yun]
     this.scheme = new Set()
     this.view = {
       sheng: this.sheng.toUpperCase().slice(0, 1) + this.sheng.slice(1),
@@ -302,6 +312,10 @@ Shuang.core.model = class Model {
   
   beforeJudge() {
     this.scheme.clear()
+    if (this.is_char) {
+      this.scheme.add(this.dict + this.dict)
+      return
+    }
     const schemeName = Shuang.app.setting.config.scheme
     const schemeDetail = Shuang.resource.scheme[schemeName].detail
     const pinyin = this.sheng + this.yun
@@ -373,13 +387,15 @@ Shuang.core.model = class Model {
     if (Shuang.core.otto_sub < cur_s.length) {
       word = cur_s[Shuang.core.otto_sub]
       Shuang.core.otto_sub += 1
+      var { pinyin } = pinyinPro;
       var shen = pinyin(word, { pattern: 'initial' }); // ["h", "y", "p", "y"]
       var yun = pinyin(word, { pattern: 'final', toneType: 'none' })
-      return new Model(shen, yun)
+      return new Model(shen, yun, word)
     }
     else {
       Shuang.core.otto_cache[0][2].play()
       Shuang.core.otto_cache.shift()
+      Shuang.core.otto_sub = 0
       var in_sub = Shuang.core.otto_cache.map(element => element[0])
       do {
         var sub = Math.floor(Math.random() * Shuang.resource.otto传世语录.length)
@@ -388,9 +404,8 @@ Shuang.core.model = class Model {
       return this.otto_random_get()
     }
   }
-  static otto_load(sub) {
-    Shuang.core.otto_cache.push([sub, Shuang.resource.otto传世语录[sub],
-    fetch('src/otto_audio/' + sub + '.mp3')
+  static async otto_load(sub) {
+    var audio = await fetch('src/otto_audio/' + sub + '.mp3')
       .then(response => response.blob())
       .then(blob => {
         // 创建一个audio元素
@@ -400,7 +415,8 @@ Shuang.core.model = class Model {
         // 播放音频
         return audio;
       })
-      .catch(error => console.error('发生错误:', error))])
+      .catch(error => console.error('发生错误:', error))
+    Shuang.core.otto_cache.push([sub, Shuang.resource.otto传世语录[sub], audio])
   }
   static isSame(a, b) {
     return a.sheng === b.sheng && a.yun === b.yun
@@ -857,8 +873,8 @@ Shuang.app.action = {
         console.log("冲刺冲刺");
         break;
     }
-    if (Shuang.core.history.includes(Shuang.core.current.sheng + Shuang.core.current.yun)) this.next()
-    else Shuang.core.history = [...Shuang.core.history, Shuang.core.current.sheng + Shuang.core.current.yun].slice(-100)
+    // if (Shuang.core.history.includes(Shuang.core.current.sheng + Shuang.core.current.yun)) this.next()
+    // else Shuang.core.history = [...Shuang.core.history, Shuang.core.current.sheng + Shuang.core.current.yun].slice(-100)
     $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
     $('#dict').innerText = Shuang.core.current.dict
 
