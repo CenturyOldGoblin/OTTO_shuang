@@ -12,7 +12,7 @@ function no_repeat_random(up, n) {
 }
 
 Shuang.app.action = {
-  init() {
+  async init() {
     /** Update Resources **/
     if (navigator && navigator.userAgent && /windows|linux/i.test(navigator.userAgent)) {
       Shuang.resource.emoji = { right: '✔️', wrong: '❌' }
@@ -60,17 +60,20 @@ Shuang.app.action = {
     })
 
     /** Setting First Question **/
-    Shuang.core.current = new Shuang.core.model('sh', 'uang')
-    $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
-    $('#dict').innerText = Shuang.core.current.dict
+    // Shuang.core.current = new Shuang.core.model('sh', 'uang')
+    // $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
+    // $('#dict').innerText = Shuang.core.current.dict
 
     var subs = no_repeat_random(Shuang.resource.otto传世语录.length, 2)
-    subs.forEach(element => {
-      Shuang.core.model.otto_load(element)
+    subs.forEach(async element => {
+     await Shuang.core.model.otto_load(element)
     });
     /** Reset Configs **/
+    Shuang.core.current = Shuang.core.model.otto_random_get();
+    $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
+    $('#dict').innerText = Shuang.core.current.dict
     Shuang.app.setting.reload()
-
+    // this.next()
     /** Listen Events **/
     document.addEventListener('keydown', e => {
       if (['Backspace', 'Tab', 'Enter', ' '].includes(e.key)) {

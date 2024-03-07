@@ -228,12 +228,29 @@ Shuang.resource.dict = {
   }
 }
 Shuang.resource.otto传世语录 = [
-  // "我重拾你的梦",
-  // "你老惦记着你那个b三狼干什么玩意儿呢",
-  // "来我给你房管你给我说话来这个叫nmb尊尼获加的臭jb杠精你给我说话来"
-  "aa一",
-  "二bb三",
-  "aa二"
+  "我重拾你的梦",
+  "你老tm想着刷你那逼三狼干什么玩意儿啊",
+  "来我给你房管你给我说话来这个叫nmb尊尼获加的这个臭jb杠精你给我说话来你今天要是说不明白你妈明天就被车创似",
+  "盲僧都没有在为什么我要去不是盲僧都不在你告诉我为什么要去啊",
+  "你白银觉得是我的锅那就是我的锅为什么呢因为白银说的话就像是一个癌症晚期患者说的话他都已经这样了你为什么不顺从他呢",
+  "你总要给人最后一段时间好的回忆吧最后的时光里",
+  "奥利安费傲印",
+  "今天来点大家想看的东西啊",
+  "米浴说的道理",
+  "欧内的手好汉",
+  "你是傻逼么你打不到他你不抗塔我打到他我抗塔",
+  "为什么呀",
+  "我的原子弹回来辣",
+  "我喜欢你你喜欢我",
+  "我草冰",
+  "西八",
+  "炫狗",
+  "原子弹",
+  "真鸡掰气人",
+  "你回家给你妈出殡吧",
+  "给你妈愉悦送走好不好",
+  "主播不会吹唢呐",
+  "冲刺"
 ]
 Object.entries(Shuang.resource.dict).forEach(([sheng, yunList]) => Shuang.resource.dict[sheng].list = Object.keys(yunList))
 Shuang.resource.dict.list = Object.keys(Shuang.resource.dict)
@@ -649,7 +666,7 @@ function no_repeat_random(up, n) {
 }
 
 Shuang.app.action = {
-  init() {
+  async init() {
     /** Update Resources **/
     if (navigator && navigator.userAgent && /windows|linux/i.test(navigator.userAgent)) {
       Shuang.resource.emoji = { right: '✔️', wrong: '❌' }
@@ -697,17 +714,21 @@ Shuang.app.action = {
     })
 
     /** Setting First Question **/
-    Shuang.core.current = new Shuang.core.model('sh', 'uang')
-    $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
-    $('#dict').innerText = Shuang.core.current.dict
+    // Shuang.core.current = new Shuang.core.model('sh', 'uang')
+    // $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
+    // $('#dict').innerText = Shuang.core.current.dict
 
     var subs = no_repeat_random(Shuang.resource.otto传世语录.length, 2)
     subs.forEach(element => {
       Shuang.core.model.otto_load(element)
     });
     /** Reset Configs **/
+    await Shuang.core.model.otto_load(22)
+    Shuang.core.current = Shuang.core.model.otto_random_get();
+    $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
+    $('#dict').innerText = Shuang.core.current.dict
     Shuang.app.setting.reload()
-
+    // this.next()
     /** Listen Events **/
     document.addEventListener('keydown', e => {
       if (['Backspace', 'Tab', 'Enter', ' '].includes(e.key)) {
