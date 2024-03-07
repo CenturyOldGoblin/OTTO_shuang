@@ -7,6 +7,7 @@
 const Shuang = {
   resource: {
     dict: {},
+    otto传世语录: [],
     schemeList: {},
     scheme: {},
     emoji: {
@@ -16,6 +17,8 @@ const Shuang = {
   core: {
     model: {},
     current: {},
+    otto_cache: [],
+    otto_sub : 0,
     order: {
       shengIndex: 0,
       yunIndex: 0
@@ -224,6 +227,11 @@ Shuang.resource.dict = {
     u: '主', ua: '爪', uai: '拽', uan: '专', uang: '装', ui: '追', un: '准', uo: '捉'
   }
 }
+Shuang.resource.otto传世语录 = [
+  "我重拾你的梦",
+  "你老惦记着你那个b三狼干什么玩意儿呢",
+  "来我给你房管你给我说话来这个叫nmb尊尼获加的臭jb杠精你给我说话来"
+]
 Object.entries(Shuang.resource.dict).forEach(([sheng, yunList]) => Shuang.resource.dict[sheng].list = Object.keys(yunList))
 Shuang.resource.dict.list = Object.keys(Shuang.resource.dict)
 /******************** EOF dict.js ************************/
@@ -259,6 +267,9 @@ Shuang.resource.schemeList = {
 /** last changed: 2018.11.10 */
 
 Shuang.app.modeList = {
+  "otto": {
+    name:"otto模式", desc:"电棍传世语录"
+  },
   'all-random': {
     name: '全部随机', desc: '全部拼音组合'
   },
@@ -275,7 +286,8 @@ Shuang.app.modeList = {
 /******************** EOF mode-list.js ************************/
 /************************ core.js ************************/
 /** last changed: 2019.8.23 */
-
+// const { pinyin } = require('pinyin-pro');
+import { pinyin } from 'pinyin-pro';
 Shuang.core.model = class Model {
   constructor(sheng = '', yun = '') {
     this.sheng = sheng.toLowerCase()
@@ -354,9 +366,51 @@ Shuang.core.model = class Model {
     }
   }
   
+  static otto_random_get() {
+    var word = ""
+    var cur_s = Shuang.core.otto_cache[0][1]
+    console.log(cur_s.length);
+    if (Shuang.core.otto_sub < cur_s.length) {
+      word = cur_s[Shuang.core.otto_sub]
+      Shuang.core.otto_sub += 1
+      var shen = pinyin(word, { pattern: 'initial' }); // ["h", "y", "p", "y"]
+      var yun = pinyin(word, { pattern: 'final', toneType: 'none' })
+      return new Model(shen, yun)
+    }
+    else {
+      Shuang.core.otto_cache[0][2].play()
+      Shuang.core.otto_cache.shift()
+      var in_sub = Shuang.core.otto_cache.map(element => element[0])
+      do {
+        var sub = Math.floor(Math.random() * Shuang.resource.otto传世语录.length)
+      } while(sub in in_sub)
+      this.otto_load(sub)
+      return this.otto_random_get()
+    }
+  }
+  static otto_load(sub) {
+    Shuang.core.otto_cache.push([sub, Shuang.resource.otto传世语录[sub],
+    fetch('src/otto_audio/' + sub + '.mp3')
+      .then(response => response.blob())
+      .then(blob => {
+        // 创建一个audio元素
+        const audio = new Audio();
+        // 设置audio的src为音频文件的Blob URL
+        audio.src = URL.createObjectURL(blob);
+        // 播放音频
+        return audio;
+      })
+      .catch(error => console.error('发生错误:', error))])
+  }
   static isSame(a, b) {
     return a.sheng === b.sheng && a.yun === b.yun
   }
+
+  // makes playing audio return a promise
+  static async Load_audio() {
+
+  }
+
 }
 /******************** EOF core.js ************************/
 /************************ setting.js ************************/
@@ -368,7 +422,7 @@ Shuang.app.setting = {
     /** Reading Storage or Using Default **/
     this.config = {
       scheme: readStorage('scheme') || 'ziranma',
-      mode: readStorage('mode') || 'all-random',
+      mode: readStorage('mode') || 'otto',
       showPic: readStorage('showPic') || 'true',
       darkMode: readStorage('darkMode') || detectDarkMode().toString(),
       autoNext: readStorage('autoNext') || 'true',
@@ -566,6 +620,17 @@ function writeStorage(key = '', value = '') { localStorage.setItem(key, value) }
 /******************** EOF setting.js ************************/
 /************************ action.js ************************/
 /** last changed: 2022.3.6 */
+function no_repeat_random(up, n) {
+  var l = []
+  var cnt = 0
+  while (cnt < n) {
+    var v = Math.floor(Math.random() * up)
+    if(v in l) continue
+    l.push(v)
+    cnt += 1
+  }
+  return l
+}
 
 Shuang.app.action = {
   init() {
@@ -620,6 +685,10 @@ Shuang.app.action = {
     $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
     $('#dict').innerText = Shuang.core.current.dict
 
+    var subs = no_repeat_random(Shuang.resource.otto传世语录.length, 2)
+    subs.forEach(element => {
+      Shuang.core.model.otto_load(element)
+    });
     /** Reset Configs **/
     Shuang.app.setting.reload()
 
@@ -783,6 +852,10 @@ Shuang.app.action = {
           Shuang.core.current = Shuang.core.model.getHardRandom()
         } while (Array.isArray(Shuang.core.current.dict))
         break
+      case 'otto':
+        Shuang.core.current = Shuang.core.model.otto_random_get();
+        console.log("冲刺冲刺");
+        break;
     }
     if (Shuang.core.history.includes(Shuang.core.current.sheng + Shuang.core.current.yun)) this.next()
     else Shuang.core.history = [...Shuang.core.history, Shuang.core.current.sheng + Shuang.core.current.yun].slice(-100)

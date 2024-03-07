@@ -178,5 +178,10 @@ Shuang.resource.dict = {
     u: '主', ua: '爪', uai: '拽', uan: '专', uang: '装', ui: '追', un: '准', uo: '捉'
   }
 }
+Shuang.resource.otto传世语录 = [
+  "我重拾你的梦",
+  "你老惦记着你那个b三狼干什么玩意儿呢",
+  "来我给你房管你给我说话来这个叫nmb尊尼获加的臭jb杠精你给我说话来"
+]
 Object.entries(Shuang.resource.dict).forEach(([sheng, yunList]) => Shuang.resource.dict[sheng].list = Object.keys(yunList))
 Shuang.resource.dict.list = Object.keys(Shuang.resource.dict)

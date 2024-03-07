@@ -1,4 +1,15 @@
 /** last changed: 2022.3.6 */
+function no_repeat_random(up, n) {
+  var l = []
+  var cnt = 0
+  while (cnt < n) {
+    var v = Math.floor(Math.random() * up)
+    if(v in l) continue
+    l.push(v)
+    cnt += 1
+  }
+  return l
+}
 
 Shuang.app.action = {
   init() {
@@ -53,6 +64,10 @@ Shuang.app.action = {
     $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
     $('#dict').innerText = Shuang.core.current.dict
 
+    var subs = no_repeat_random(Shuang.resource.otto传世语录.length, 2)
+    subs.forEach(element => {
+      Shuang.core.model.otto_load(element)
+    });
     /** Reset Configs **/
     Shuang.app.setting.reload()
 
@@ -216,6 +231,10 @@ Shuang.app.action = {
           Shuang.core.current = Shuang.core.model.getHardRandom()
         } while (Array.isArray(Shuang.core.current.dict))
         break
+      case 'otto':
+        Shuang.core.current = Shuang.core.model.otto_random_get();
+        console.log("冲刺冲刺");
+        break;
     }
     if (Shuang.core.history.includes(Shuang.core.current.sheng + Shuang.core.current.yun)) this.next()
     else Shuang.core.history = [...Shuang.core.history, Shuang.core.current.sheng + Shuang.core.current.yun].slice(-100)

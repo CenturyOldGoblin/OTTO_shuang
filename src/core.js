@@ -1,5 +1,5 @@
 /** last changed: 2019.8.23 */
-
+// const { pinyin } = require('pinyin-pro');
 Shuang.core.model = class Model {
   constructor(sheng = '', yun = '') {
     this.sheng = sheng.toLowerCase()
@@ -78,7 +78,49 @@ Shuang.core.model = class Model {
     }
   }
   
+  static otto_random_get() {
+    var word = ""
+    var cur_s = Shuang.core.otto_cache[0][1]
+    console.log(cur_s.length);
+    if (Shuang.core.otto_sub < cur_s.length) {
+      word = cur_s[Shuang.core.otto_sub]
+      Shuang.core.otto_sub += 1
+      var shen = pinyin(word, { pattern: 'initial' }); // ["h", "y", "p", "y"]
+      var yun = pinyin(word, { pattern: 'final', toneType: 'none' })
+      return new Model(shen, yun)
+    }
+    else {
+      Shuang.core.otto_cache[0][2].play()
+      Shuang.core.otto_cache.shift()
+      var in_sub = Shuang.core.otto_cache.map(element => element[0])
+      do {
+        var sub = Math.floor(Math.random() * Shuang.resource.otto传世语录.length)
+      } while(sub in in_sub)
+      this.otto_load(sub)
+      return this.otto_random_get()
+    }
+  }
+  static otto_load(sub) {
+    Shuang.core.otto_cache.push([sub, Shuang.resource.otto传世语录[sub],
+    fetch('src/otto_audio/' + sub + '.mp3')
+      .then(response => response.blob())
+      .then(blob => {
+        // 创建一个audio元素
+        const audio = new Audio();
+        // 设置audio的src为音频文件的Blob URL
+        audio.src = URL.createObjectURL(blob);
+        // 播放音频
+        return audio;
+      })
+      .catch(error => console.error('发生错误:', error))])
+  }
   static isSame(a, b) {
     return a.sheng === b.sheng && a.yun === b.yun
   }
+
+  // makes playing audio return a promise
+  static async Load_audio() {
+
+  }
+
 }

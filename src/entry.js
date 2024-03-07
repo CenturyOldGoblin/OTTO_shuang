@@ -4,6 +4,7 @@
 const Shuang = {
   resource: {
     dict: {},
+    otto传世语录: [],
     schemeList: {},
     scheme: {},
     emoji: {
@@ -13,6 +14,8 @@ const Shuang = {
   core: {
     model: {},
     current: {},
+    otto_cache: [],
+    otto_sub : 0,
     order: {
       shengIndex: 0,
       yunIndex: 0
