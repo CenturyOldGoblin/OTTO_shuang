@@ -6,6 +6,7 @@
     "clear": "node scripts/clear.js",
     "bundle": "node scripts/bundle.js",
     "rename": "node scripts/rename.js",
+    "pack": "node scripts/pack.js",
     "build": "npm run clear && npm run build:src && npm run rename",
     "build:src": "npm run bundle && npm run build:js && npm run build:css && npm run build:html",
     "build:js": "npx babel src/app.bundle.js -d build && npx babel src/scheme -d build/scheme",
@@ -17,7 +18,8 @@
     "debug:css": "node scripts/copy.js src/style.css build/style.min.css",
     "debug:html": "node scripts/copy.js index.src.html index.html",
     "start": "npx serve",
-    "release": "node scripts/release.js"
+    "release": "node scripts/release.js",
+    "build_v": "npm run build && npm run pack.js"
   },
   "repository": {
     "type": "git",
@@ -46,6 +48,7 @@
     "serve": "latest"
   },
   "dependencies": {
+    "ncp": "^2.0.0",
     "pinyin-pro": "^3.19.6"
   },
   "main": "index.js"
