@@ -261,7 +261,8 @@ Shuang.resource.otto传世语录 = [
   "你回家给你妈出殡吧",
   "给你妈愉悦送走好不好",
   "主播不会吹唢呐",
-  "冲刺"
+  "冲刺",
+  "哈比下"
 ]
 Object.entries(Shuang.resource.dict).forEach(([sheng, yunList]) => Shuang.resource.dict[sheng].list = Object.keys(yunList))
 Shuang.resource.dict.list = Object.keys(Shuang.resource.dict)
@@ -319,6 +320,11 @@ Shuang.app.modeList = {
 /** last changed: 2019.8.23 */
 // const { pinyin } = require('pinyin-pro');
 // import {pinyin} from 'pinyin-pro'
+async function force_load(s) {
+  var i = Shuang.resource.otto传世语录.indexOf(s)
+  Shuang.core.model.otto_insert(i,1)
+}
+
 Shuang.core.model = class Model {
   constructor(sheng = '', yun = '', word = '') {
     this.sheng = sheng.toLowerCase()
@@ -408,20 +414,25 @@ Shuang.core.model = class Model {
     }
   }
   
+  static shen_list = []
+  static yun_list = []
   static otto_random_get() {
+    var { pinyin } = pinyinPro;
     var word = ""
     var cur_s = Shuang.core.otto_cache[0][1]
+    this.shen_list = pinyin(cur_s, { pattern: 'initial', toneType: 'none', type: 'array' });
+    this.yun_list = pinyin(cur_s, { pattern: 'final', toneType: 'none', type: 'array' });
     if (Shuang.core.otto_sub < cur_s.length) {
       word = cur_s[Shuang.core.otto_sub]
+      
+      var shen = this.shen_list[Shuang.core.otto_sub]
+      var yun = this.yun_list[Shuang.core.otto_sub]
       Shuang.core.otto_sub += 1
-      var { pinyin } = pinyinPro;
-      var shen = pinyin(word, { pattern: 'initial' }); // ["h", "y", "p", "y"]
-      var yun = pinyin(word, { pattern: 'final', toneType: 'none' })
       return new Model(shen, yun, word)
     }
     else {
       Shuang.core.allin_mode.cur_ju += 1;
-      if (Shuang.core.allin_mode.cur_ju >= Shuang.core.allin_mode.tot_ju) {
+      if (Shuang.core.allin_mode.cur_ju >= Shuang.core.allin_mode.tot_ju && Shuang.core.allin_mode.allin) {
         Shuang.app.action.allin_off()
         console.log("再见了, 所有的阿米诺手.")
       }
@@ -429,10 +440,7 @@ Shuang.core.model = class Model {
       Shuang.core.otto_cache[0][2].play()
       Shuang.core.otto_cache.shift()
       Shuang.core.otto_sub = 0
-      var in_sub = Shuang.core.otto_cache.map(element => element[0])
-      do {
-        var sub = no_repeat_random()
-      } while(sub in in_sub)
+      var sub = no_repeat_random()
       this.otto_load(sub)
       return this.otto_random_get()
     }
@@ -451,6 +459,20 @@ Shuang.core.model = class Model {
       .catch(error => console.error('发生错误:', error))
     Shuang.core.otto_cache.push([sub, Shuang.resource.otto传世语录[sub], audio])
   }
+  static async otto_insert(sub,i) {
+    var audio = await fetch('src/otto_audio/' + sub + '.mp3')
+      .then(response => response.blob())
+      .then(blob => {
+        // 创建一个audio元素
+        const audio = new Audio();
+        // 设置audio的src为音频文件的Blob URL
+        audio.src = URL.createObjectURL(blob);
+        // 播放音频
+        return audio;
+      })
+      .catch(error => console.error('发生错误:', error))
+    Shuang.core.otto_cache[i] = [sub, Shuang.resource.otto传世语录[sub], audio]
+  } 
   static isSame(a, b) {
     return a.sheng === b.sheng && a.yun === b.yun
   }
@@ -671,10 +693,11 @@ function writeStorage(key = '', value = '') { localStorage.setItem(key, value) }
 /** last changed: 2022.3.6 */
 var rand_l = []
 var rand_cnt = -1
-function no_repeat_random(n) {
-  l = []
+function n_no_repeat_random(n) {
+  var l = []
   while (n > 0) {
     l.push(no_repeat_random())
+    n--
   }
   return l
 }
@@ -685,8 +708,8 @@ function no_repeat_random(){
   }
   return rand_l[rand_cnt++]
 }
-function pseudoRandomArray(length) {
-  const array = Array.from({ length }, (_, index) => index);
+function pseudoRandomArray(lenh) {
+  const array = Array.from({ length: lenh }, (_, index) => index);
 
   // Fisher-Yates 洗牌算法
   for (let i = array.length - 1; i > 0; i--) {
@@ -697,9 +720,6 @@ function pseudoRandomArray(length) {
   return array;
 }
 
-// 测试示例
-const values = pseudoRandomArray(20);
-console.log(values);
 
 Shuang.app.action = {
   async init() {
@@ -754,7 +774,7 @@ Shuang.app.action = {
     // $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
     // $('#dict').innerText = Shuang.core.current.dict
 
-    var subs = no_repeat_random(3)
+    var subs = n_no_repeat_random(3)
     async function load_allin_audio() {
       for (var i = 1; i <= 3; i++) {
         var audio = await fetch('src/otto_audio/allin/' + i + '.mp3')
@@ -777,9 +797,12 @@ Shuang.app.action = {
       }
     }
     load_allin_audio()
-    for (i in subs) {
-      await Shuang.core.model.otto_load(subs[i])
+    async function ini_load() {
+      for (var i = 0; i < 3;i++) {
+        await Shuang.core.model.otto_load(subs[i])
+      }
     }
+    await ini_load();
     /** Reset Configs **/
     Shuang.core.current = Shuang.core.model.otto_random_get();
     $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
@@ -792,7 +815,7 @@ Shuang.app.action = {
         if (e.preventDefault) {
           e.preventDefault()
         } else {
-          event.returnValue = false
+          // event.returnValue = false
         }
       }
     })
@@ -1001,6 +1024,8 @@ Shuang.app.action = {
         break
     }
     Shuang.core.allin_mode.point = Math.max(0, Shuang.core.allin_mode.point)
+    console.log(Shuang.core.allin_mode.point)
+
   }
   ,
   allin_off() {
@@ -1057,7 +1082,7 @@ Shuang.app.action = {
     if (res) {
       Shuang.core.allin_mode.point = Math.min(Shuang.core.allin_mode.max_p, Shuang.core.allin_mode.point +
         (100 / (Shuang.core.allin_mode.tot_ju * 14)) * Math.exp((100 - (Shuang.core.allin_mode.point)) / 60))
-      console.log(Shuang.core.allin_mode.cur_ju)
+      // console.log(Shuang.core.allin_mode.cur_ju)
     }
     else {
       Shuang.core.allin_mode.point -= 50 / (Shuang.core.allin_mode.tot_ju * 14)

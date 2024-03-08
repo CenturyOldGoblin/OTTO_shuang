@@ -3,5 +3,7 @@
     "@babel/preset-env",
     "minify"
   ],
-  "comments":false
+  "comments":false,
+  "plugins": ["@babel/plugin-proposal-class-properties"]
+
 }

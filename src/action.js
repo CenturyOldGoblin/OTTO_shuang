@@ -1,10 +1,11 @@
 /** last changed: 2022.3.6 */
 var rand_l = []
 var rand_cnt = -1
-function no_repeat_random(n) {
-  l = []
+function n_no_repeat_random(n) {
+  var l = []
   while (n > 0) {
     l.push(no_repeat_random())
+    n--
   }
   return l
 }
@@ -15,8 +16,8 @@ function no_repeat_random(){
   }
   return rand_l[rand_cnt++]
 }
-function pseudoRandomArray(length) {
-  const array = Array.from({ length }, (_, index) => index);
+function pseudoRandomArray(lenh) {
+  const array = Array.from({ length: lenh }, (_, index) => index);
 
   // Fisher-Yates 洗牌算法
   for (let i = array.length - 1; i > 0; i--) {
@@ -27,9 +28,6 @@ function pseudoRandomArray(length) {
   return array;
 }
 
-// 测试示例
-const values = pseudoRandomArray(20);
-console.log(values);
 
 Shuang.app.action = {
   async init() {
@@ -84,7 +82,7 @@ Shuang.app.action = {
     // $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
     // $('#dict').innerText = Shuang.core.current.dict
 
-    var subs = no_repeat_random(3)
+    var subs = n_no_repeat_random(3)
     async function load_allin_audio() {
       for (var i = 1; i <= 3; i++) {
         var audio = await fetch('src/otto_audio/allin/' + i + '.mp3')
@@ -107,9 +105,12 @@ Shuang.app.action = {
       }
     }
     load_allin_audio()
-    for (i in subs) {
-      await Shuang.core.model.otto_load(subs[i])
+    async function ini_load() {
+      for (var i = 0; i < 3;i++) {
+        await Shuang.core.model.otto_load(subs[i])
+      }
     }
+    await ini_load();
     /** Reset Configs **/
     Shuang.core.current = Shuang.core.model.otto_random_get();
     $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
@@ -122,7 +123,7 @@ Shuang.app.action = {
         if (e.preventDefault) {
           e.preventDefault()
         } else {
-          event.returnValue = false
+          // event.returnValue = false
         }
       }
     })
@@ -331,6 +332,8 @@ Shuang.app.action = {
         break
     }
     Shuang.core.allin_mode.point = Math.max(0, Shuang.core.allin_mode.point)
+    console.log(Shuang.core.allin_mode.point)
+
   }
   ,
   allin_off() {
@@ -387,7 +390,7 @@ Shuang.app.action = {
     if (res) {
       Shuang.core.allin_mode.point = Math.min(Shuang.core.allin_mode.max_p, Shuang.core.allin_mode.point +
         (100 / (Shuang.core.allin_mode.tot_ju * 14)) * Math.exp((100 - (Shuang.core.allin_mode.point)) / 60))
-      console.log(Shuang.core.allin_mode.cur_ju)
+      // console.log(Shuang.core.allin_mode.cur_ju)
     }
     else {
       Shuang.core.allin_mode.point -= 50 / (Shuang.core.allin_mode.tot_ju * 14)
