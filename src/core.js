@@ -93,7 +93,6 @@ Shuang.core.model = class Model {
   static otto_random_get() {
     var word = ""
     var cur_s = Shuang.core.otto_cache[0][1]
-    console.log(cur_s.length);
     if (Shuang.core.otto_sub < cur_s.length) {
       word = cur_s[Shuang.core.otto_sub]
       Shuang.core.otto_sub += 1
@@ -103,12 +102,18 @@ Shuang.core.model = class Model {
       return new Model(shen, yun, word)
     }
     else {
+      Shuang.core.allin_mode.cur_ju += 1;
+      if (Shuang.core.allin_mode.cur_ju >= Shuang.core.allin_mode.tot_ju) {
+        Shuang.app.action.allin_off()
+        console.log("再见了, 所有的阿米诺手.")
+      }
+
       Shuang.core.otto_cache[0][2].play()
       Shuang.core.otto_cache.shift()
       Shuang.core.otto_sub = 0
       var in_sub = Shuang.core.otto_cache.map(element => element[0])
       do {
-        var sub = Math.floor(Math.random() * Shuang.resource.otto传世语录.length)
+        var sub = no_repeat_random()
       } while(sub in in_sub)
       this.otto_load(sub)
       return this.otto_random_get()

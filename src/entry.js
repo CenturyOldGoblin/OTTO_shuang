@@ -5,6 +5,7 @@ const Shuang = {
   resource: {
     dict: {},
     otto传世语录: [],
+    allin_audio:[],
     schemeList: {},
     scheme: {},
     emoji: {
@@ -15,7 +16,17 @@ const Shuang = {
     model: {},
     current: {},
     otto_cache: [],
-    otto_sub : 0,
+    otto_sub: 0,
+    allin_mode: {
+      point:0,
+      accuracy: 1,
+      tot_ju: 0,
+      cur_ju:0,
+      allin: false,
+      mode: "",
+      max_p: 0,
+      Timer:undefined
+    },
     order: {
       shengIndex: 0,
       yunIndex: 0

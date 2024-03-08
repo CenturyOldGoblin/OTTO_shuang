@@ -1,4 +1,23 @@
 /** last changed: 2022.3.6 */
+.button {
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 30px;
+  -webkit-transition-duration: 0.4s;
+  /* Safari */
+  transition-duration: 0.4s;
+  
+}
+
+.button:hover {
+  background-color: #4CAF50;
+  /* Green */
+  color: white;
+}
 
 body {
   margin: 0 auto;
@@ -51,8 +70,8 @@ body {
 
 /* workspace */
 .workspace {
-  margin: auto;
-  width: 300px;
+  /* margin: auto; */
+  width: 100%;
   height: 150px;
   display: -webkit-flex;
   display: flex;
