@@ -19,7 +19,7 @@
     "debug:html": "node scripts/copy.js index.src.html index.html",
     "start": "npx serve",
     "release": "node scripts/release.js",
-    "build_v": "npm run build && npm run pack.js"
+    "build_v": "npm run build && npm run pack"
   },
   "repository": {
     "type": "git",
