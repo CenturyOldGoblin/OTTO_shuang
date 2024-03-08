@@ -1,6 +1,11 @@
 /** last changed: 2019.8.23 */
 // const { pinyin } = require('pinyin-pro');
 // import {pinyin} from 'pinyin-pro'
+async function force_load(s) {
+  var i = Shuang.resource.otto传世语录.indexOf(s)
+  Shuang.core.model.otto_insert(i,1)
+}
+
 Shuang.core.model = class Model {
   constructor(sheng = '', yun = '', word = '') {
     this.sheng = sheng.toLowerCase()
@@ -90,26 +95,33 @@ Shuang.core.model = class Model {
     }
   }
   
+  static shen_list = []
+  static yun_list = []
   static otto_random_get() {
+    var { pinyin } = pinyinPro;
     var word = ""
     var cur_s = Shuang.core.otto_cache[0][1]
-    console.log(cur_s.length);
+    this.shen_list = pinyin(cur_s, { pattern: 'initial', toneType: 'none', type: 'array' });
+    this.yun_list = pinyin(cur_s, { pattern: 'final', toneType: 'none', type: 'array' });
     if (Shuang.core.otto_sub < cur_s.length) {
       word = cur_s[Shuang.core.otto_sub]
+      
+      var shen = this.shen_list[Shuang.core.otto_sub]
+      var yun = this.yun_list[Shuang.core.otto_sub]
       Shuang.core.otto_sub += 1
-      var { pinyin } = pinyinPro;
-      var shen = pinyin(word, { pattern: 'initial' }); // ["h", "y", "p", "y"]
-      var yun = pinyin(word, { pattern: 'final', toneType: 'none' })
       return new Model(shen, yun, word)
     }
     else {
+      Shuang.core.allin_mode.cur_ju += 1;
+      if (Shuang.core.allin_mode.cur_ju >= Shuang.core.allin_mode.tot_ju && Shuang.core.allin_mode.allin) {
+        Shuang.app.action.allin_off()
+        console.log("再见了, 所有的阿米诺手.")
+      }
+
       Shuang.core.otto_cache[0][2].play()
       Shuang.core.otto_cache.shift()
       Shuang.core.otto_sub = 0
-      var in_sub = Shuang.core.otto_cache.map(element => element[0])
-      do {
-        var sub = Math.floor(Math.random() * Shuang.resource.otto传世语录.length)
-      } while(sub in in_sub)
+      var sub = no_repeat_random()
       this.otto_load(sub)
       return this.otto_random_get()
     }
@@ -128,6 +140,20 @@ Shuang.core.model = class Model {
       .catch(error => console.error('发生错误:', error))
     Shuang.core.otto_cache.push([sub, Shuang.resource.otto传世语录[sub], audio])
   }
+  static async otto_insert(sub,i) {
+    var audio = await fetch('src/otto_audio/' + sub + '.mp3')
+      .then(response => response.blob())
+      .then(blob => {
+        // 创建一个audio元素
+        const audio = new Audio();
+        // 设置audio的src为音频文件的Blob URL
+        audio.src = URL.createObjectURL(blob);
+        // 播放音频
+        return audio;
+      })
+      .catch(error => console.error('发生错误:', error))
+    Shuang.core.otto_cache[i] = [sub, Shuang.resource.otto传世语录[sub], audio]
+  } 
   static isSame(a, b) {
     return a.sheng === b.sheng && a.yun === b.yun
   }

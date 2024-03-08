@@ -201,7 +201,8 @@ Shuang.resource.otto传世语录 = [
   "你回家给你妈出殡吧",
   "给你妈愉悦送走好不好",
   "主播不会吹唢呐",
-  "冲刺"
+  "冲刺",
+  "哈比下"
 ]
 Object.entries(Shuang.resource.dict).forEach(([sheng, yunList]) => Shuang.resource.dict[sheng].list = Object.keys(yunList))
 Shuang.resource.dict.list = Object.keys(Shuang.resource.dict)

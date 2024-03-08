@@ -8,6 +8,7 @@ const Shuang = {
   resource: {
     dict: {},
     otto传世语录: [],
+    allin_audio:[],
     schemeList: {},
     scheme: {},
     emoji: {
@@ -18,7 +19,17 @@ const Shuang = {
     model: {},
     current: {},
     otto_cache: [],
-    otto_sub : 0,
+    otto_sub: 0,
+    allin_mode: {
+      point:0,
+      accuracy: 1,
+      tot_ju: 0,
+      cur_ju:0,
+      allin: false,
+      mode: "",
+      max_p: 0,
+      Timer:undefined
+    },
     order: {
       shengIndex: 0,
       yunIndex: 0
@@ -250,7 +261,8 @@ Shuang.resource.otto传世语录 = [
   "你回家给你妈出殡吧",
   "给你妈愉悦送走好不好",
   "主播不会吹唢呐",
-  "冲刺"
+  "冲刺",
+  "哈比下"
 ]
 Object.entries(Shuang.resource.dict).forEach(([sheng, yunList]) => Shuang.resource.dict[sheng].list = Object.keys(yunList))
 Shuang.resource.dict.list = Object.keys(Shuang.resource.dict)
@@ -308,6 +320,11 @@ Shuang.app.modeList = {
 /** last changed: 2019.8.23 */
 // const { pinyin } = require('pinyin-pro');
 // import {pinyin} from 'pinyin-pro'
+async function force_load(s) {
+  var i = Shuang.resource.otto传世语录.indexOf(s)
+  Shuang.core.model.otto_insert(i,1)
+}
+
 Shuang.core.model = class Model {
   constructor(sheng = '', yun = '', word = '') {
     this.sheng = sheng.toLowerCase()
@@ -397,26 +414,33 @@ Shuang.core.model = class Model {
     }
   }
   
+  static shen_list = []
+  static yun_list = []
   static otto_random_get() {
+    var { pinyin } = pinyinPro;
     var word = ""
     var cur_s = Shuang.core.otto_cache[0][1]
-    console.log(cur_s.length);
+    this.shen_list = pinyin(cur_s, { pattern: 'initial', toneType: 'none', type: 'array' });
+    this.yun_list = pinyin(cur_s, { pattern: 'final', toneType: 'none', type: 'array' });
     if (Shuang.core.otto_sub < cur_s.length) {
       word = cur_s[Shuang.core.otto_sub]
+      
+      var shen = this.shen_list[Shuang.core.otto_sub]
+      var yun = this.yun_list[Shuang.core.otto_sub]
       Shuang.core.otto_sub += 1
-      var { pinyin } = pinyinPro;
-      var shen = pinyin(word, { pattern: 'initial' }); // ["h", "y", "p", "y"]
-      var yun = pinyin(word, { pattern: 'final', toneType: 'none' })
       return new Model(shen, yun, word)
     }
     else {
+      Shuang.core.allin_mode.cur_ju += 1;
+      if (Shuang.core.allin_mode.cur_ju >= Shuang.core.allin_mode.tot_ju && Shuang.core.allin_mode.allin) {
+        Shuang.app.action.allin_off()
+        console.log("再见了, 所有的阿米诺手.")
+      }
+
       Shuang.core.otto_cache[0][2].play()
       Shuang.core.otto_cache.shift()
       Shuang.core.otto_sub = 0
-      var in_sub = Shuang.core.otto_cache.map(element => element[0])
-      do {
-        var sub = Math.floor(Math.random() * Shuang.resource.otto传世语录.length)
-      } while(sub in in_sub)
+      var sub = no_repeat_random()
       this.otto_load(sub)
       return this.otto_random_get()
     }
@@ -435,6 +459,20 @@ Shuang.core.model = class Model {
       .catch(error => console.error('发生错误:', error))
     Shuang.core.otto_cache.push([sub, Shuang.resource.otto传世语录[sub], audio])
   }
+  static async otto_insert(sub,i) {
+    var audio = await fetch('src/otto_audio/' + sub + '.mp3')
+      .then(response => response.blob())
+      .then(blob => {
+        // 创建一个audio元素
+        const audio = new Audio();
+        // 设置audio的src为音频文件的Blob URL
+        audio.src = URL.createObjectURL(blob);
+        // 播放音频
+        return audio;
+      })
+      .catch(error => console.error('发生错误:', error))
+    Shuang.core.otto_cache[i] = [sub, Shuang.resource.otto传世语录[sub], audio]
+  } 
   static isSame(a, b) {
     return a.sheng === b.sheng && a.yun === b.yun
   }
@@ -653,17 +691,35 @@ function writeStorage(key = '', value = '') { localStorage.setItem(key, value) }
 /******************** EOF setting.js ************************/
 /************************ action.js ************************/
 /** last changed: 2022.3.6 */
-function no_repeat_random(up, n) {
+var rand_l = []
+var rand_cnt = -1
+function n_no_repeat_random(n) {
   var l = []
-  var cnt = 0
-  while (cnt < n) {
-    var v = Math.floor(Math.random() * up)
-    if(v in l) continue
-    l.push(v)
-    cnt += 1
+  while (n > 0) {
+    l.push(no_repeat_random())
+    n--
   }
   return l
 }
+function no_repeat_random(){
+  if (rand_cnt >= rand_l.length || rand_cnt == -1) {
+    rand_l = pseudoRandomArray(Shuang.resource.otto传世语录.length)
+    rand_cnt = 0
+  }
+  return rand_l[rand_cnt++]
+}
+function pseudoRandomArray(lenh) {
+  const array = Array.from({ length: lenh }, (_, index) => index);
+
+  // Fisher-Yates 洗牌算法
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+
+  return array;
+}
+
 
 Shuang.app.action = {
   async init() {
@@ -718,12 +774,36 @@ Shuang.app.action = {
     // $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
     // $('#dict').innerText = Shuang.core.current.dict
 
-    var subs = no_repeat_random(Shuang.resource.otto传世语录.length, 2)
-    subs.forEach(element => {
-      Shuang.core.model.otto_load(element)
-    });
+    var subs = n_no_repeat_random(3)
+    async function load_allin_audio() {
+      for (var i = 1; i <= 3; i++) {
+        var audio = await fetch('src/otto_audio/allin/' + i + '.mp3')
+          .then(response => response.blob())
+          .then(blob => {
+            // 创建一个audio元素
+            const audio = new Audio();
+            // 设置audio的src为音频文件的Blob URL
+            audio.src = URL.createObjectURL(blob);
+            // 播放音频
+            return audio;
+          })
+          .catch(error => console.error('发生错误:', error))
+        audio.addEventListener('ended', () => {
+          $("#daoli_1").hidden = true
+          $("#daoli_2").hidden = true
+          $("#daoli_3").hidden = true
+        });
+        Shuang.resource.allin_audio.push(audio)
+      }
+    }
+    load_allin_audio()
+    async function ini_load() {
+      for (var i = 0; i < 3;i++) {
+        await Shuang.core.model.otto_load(subs[i])
+      }
+    }
+    await ini_load();
     /** Reset Configs **/
-    await Shuang.core.model.otto_load(22)
     Shuang.core.current = Shuang.core.model.otto_random_get();
     $('#q').innerText = Shuang.core.current.view.sheng + Shuang.core.current.view.yun
     $('#dict').innerText = Shuang.core.current.dict
@@ -731,11 +811,11 @@ Shuang.app.action = {
     // this.next()
     /** Listen Events **/
     document.addEventListener('keydown', e => {
-      if (['Backspace', 'Tab', 'Enter', ' '].includes(e.key)) {
+      if (['Tab', 'Enter', ' '].includes(e.key)) {
         if (e.preventDefault) {
           e.preventDefault()
         } else {
-          event.returnValue = false
+          // event.returnValue = false
         }
       }
     })
@@ -781,19 +861,34 @@ Shuang.app.action = {
     $('#wxpay-qr').addEventListener('mouseout', e => {
       Shuang.app.action.qrHide(e.target)
     })
-    $('#wx-name').addEventListener('mouseover', () => {
-      Shuang.app.action.qrShow('wx-qr')
-    })
-    $('#wx-qr').addEventListener('click', e => {
-      Shuang.app.action.qrHide(e.target)
-    })
-    $('#wx-qr').addEventListener('mouseout', e => {
-      Shuang.app.action.qrHide(e.target)
-    })
+    // $('#wx-name').addEventListener('mouseover', () => {
+    //   Shuang.app.action.qrShow('wx-qr')
+    // })
+    // $('#wx-qr').addEventListener('click', e => {
+    //   Shuang.app.action.qrHide(e.target)
+    // })
+    // $('#wx-qr').addEventListener('mouseout', e => {
+    //   Shuang.app.action.qrHide(e.target)
+    // })
     $('#dict').addEventListener('click', () => {
       Shuang.core.current.beforeJudge()
       $('#a').value = Shuang.core.current.scheme.values().next().value
       this.judge()
+    })
+    $('#allin_button').addEventListener('click', () => {
+      if (!Shuang.core.allin_mode.allin) {
+        var v = $("#allin_v").value
+        if (0 <= v && v <= 100) {
+          Shuang.core.allin_mode.tot_ju = v
+          Shuang.core.allin_mode.cur_ju = 0
+          this.allin_on($("#allin_select").value)
+        }
+        $('#allin_button').innerText = "关闭allin模式"
+      }
+      else {
+        Shuang.app.action.allin_off()
+      }
+
     })
     window.addEventListener('resize', Shuang.app.setting.updateKeysHintLayoutRatio)
     window.resizeTo(window.outerWidth, window.outerHeight)
@@ -844,6 +939,7 @@ Shuang.app.action = {
         const canAuto = $('#a').value.length === 2
         const isRight = this.judge()
         if (canAuto) {
+          if (Shuang.core.allin_mode.allin) this.allin_judge(isRight)
           if (isRight && Shuang.app.setting.config.autoNext === 'true') {
             this.next(e.simulated)
           } else if (!isRight && Shuang.app.setting.config.autoClear === 'true') {
@@ -866,6 +962,134 @@ Shuang.app.action = {
       return false
     }
   },
+  allin_on(mode) {
+    Shuang.core.allin_mode.mode = mode
+    Shuang.core.allin_mode.allin = true
+    Shuang.core.allin_mode.max_p = Shuang.core.allin_mode.point= 100+Shuang.core.allin_mode.tot_ju*9
+    
+    this.allin_check()
+    Shuang.core.allin_mode.Timer = setInterval(this.allin_check, 200);
+    switch (mode) {
+      case "癌症晚期":
+        // $("#show-keys").checked = Shuang.app.setting.config.showKeys = 'false';
+        Shuang.app.setting.setShowKeys(false)
+        $("#show-keys").hidden = true
+        $("#daoli_1").hidden = false
+        $("#daoli_2").hidden = false
+        break
+      case "癌症早期":
+        Shuang.app.setting.setShowKeys(false)
+        $("#show-keys").hidden = true
+        $('#q').style.display = 'none'//pinyin
+        $("#daoli_1").hidden = false
+        $("#daoli_2").hidden = false
+        break
+      case "钻一":
+        Shuang.app.setting.setShowKeys(false)
+        $("#show-keys").hidden = true
+        $('#q').style.display = 'none'//pinyin
+        $("#daoli_1").hidden = false
+        $("#daoli_2").hidden = false
+        $("#daoli_3").hidden = false
+        Shuang.app.setting.setPicVisible(false)
+        $("#pic-switcher").hidden = true
+        break
+    }
+  },
+  allin_check() {
+    if (Shuang.core.allin_mode.point >= 75) {
+      $("#daoli_1").src = "img/otto/3.webp"
+      $("#daoli_2").src = "img/otto/3.webp"
+      $("#daoli_3").src = "img/otto/3.webp"
+    }
+    else if (Shuang.core.allin_mode.point >= 20) {
+      $("#daoli_1").src = "img/otto/2.webp"
+      $("#daoli_2").src = "img/otto/2.webp"
+      $("#daoli_3").src = "img/otto/2.webp"
+    }
+    else {
+      $("#daoli_1").src = "img/otto/1.webp"
+      $("#daoli_2").src = "img/otto/1.webp"
+      $("#daoli_3").src = "img/otto/1.webp"
+    }
+    switch (Shuang.core.allin_mode.mode) {
+      case "癌症晚期":
+        Shuang.core.allin_mode.point -= 3 / 5
+        break
+      case "癌症早期":
+        Shuang.core.allin_mode.point -= 6 / 5
+        break
+      case "钻一":
+        Shuang.core.allin_mode.point -= 10 / 5
+        break
+    }
+    Shuang.core.allin_mode.point = Math.max(0, Shuang.core.allin_mode.point)
+    console.log(Shuang.core.allin_mode.point)
+
+  }
+  ,
+  allin_off() {
+    clearInterval(Shuang.core.allin_mode.Timer)
+    Shuang.core.allin_mode.allin = false
+    $('#allin_button').innerText = "allin模式"
+    switch (Shuang.core.allin_mode.mode) {
+      case "癌症晚期":
+        // $("#show-keys").checked = Shuang.app.setting.config.showKeys = 'false';
+        Shuang.app.setting.setShowKeys(true)
+        $("#show-keys").hidden = false
+
+        break
+      case "癌症早期":
+        Shuang.app.setting.setShowKeys(true)
+        $("#show-keys").hidden = false
+        $('#q').style.display = 'block'//pinyin
+
+        break
+      case "钻一":
+        Shuang.app.setting.setShowKeys(true)
+        $("#show-keys").hidden = false
+        $('#q').style.display = 'block'//pinyin
+
+        Shuang.app.setting.setPicVisible(true)
+        $("#pic-switcher").hidden = false
+        break
+    }
+    var audio
+    var score = Shuang.core.allin_mode.point / Shuang.core.allin_mode.max_p * 100
+    if (Shuang.core.allin_mode.point >= 75) {
+      audio = Shuang.resource.allin_audio[2]
+      // alert("呵呵呵呵哈哈哈\n" + score + "%")
+      createToast("success", "呵呵呵呵哈哈哈\n" + score + "%", true, 5)
+    }
+    else if (Shuang.core.allin_mode.point >= 20) {
+      audio = Shuang.resource.allin_audio[1]
+      
+      createToast("info", "怎么大伙都挺猛的到你这拉了胯呢?\n" + score + "%", true, 5)
+    }
+    else {
+      audio = Shuang.resource.allin_audio[0]
+
+      createToast("warning", "铸币吧怎么这么菜啊?\n" + score + "%", true, 5)
+    }
+    audio.play()
+
+    
+
+  }
+  ,
+  allin_judge(res) {
+    var v = 0
+    if (res) {
+      Shuang.core.allin_mode.point = Math.min(Shuang.core.allin_mode.max_p, Shuang.core.allin_mode.point +
+        (100 / (Shuang.core.allin_mode.tot_ju * 14)) * Math.exp((100 - (Shuang.core.allin_mode.point)) / 60))
+      // console.log(Shuang.core.allin_mode.cur_ju)
+    }
+    else {
+      Shuang.core.allin_mode.point -= 50 / (Shuang.core.allin_mode.tot_ju * 14)
+    }
+    Shuang.core.allin_mode.point = Math.max(0, Shuang.core.allin_mode.point)
+  }
+  ,
   redo(noFocus) {
     $('#a').value = ''
     if (!noFocus) $('#a').focus()
